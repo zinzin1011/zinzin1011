@@ -55,6 +55,24 @@
   animation-iteration-count:infinite;
   animation-timing-function: ease-in-out;
   }
+    @keyframes bbibbi-14-walk {
+  0% {
+  transform: translate(7px, 31px);
+  }
+  50% {
+  transform: translate(60px, 31px);
+  }
+  100% {
+  transform: translate(7px, 31px);
+  }
+  }
+
+  #bbibbi-14 {
+  animation-name:bbibbi-14-walk;
+  animation-duration:4s;
+  animation-iteration-count:infinite;
+  animation-timing-function: ease-in-out;
+  }
 </style>
   <g id="bbibbi-14" transform="translate(7, 31)">
     <svg width="600" height="300" viewBox="0 0 200 100" fill="none" overflow="visible">
