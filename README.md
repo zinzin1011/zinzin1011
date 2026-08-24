@@ -4,7 +4,7 @@
     <img src="https://render.gitanimals.org/farms/zinzin1011" alt="gitanimals" />
   </a>
 
-
+![pet](./assets/bbibbi.svg)
   
 - 🔭 I’m currently working on ...
 - 🌱 I’m currently learning ...
