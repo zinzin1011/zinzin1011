@@ -1,6 +1,6 @@
 ## Hi there 👋
 
-![fish](./fish.svg) 
+![fishman](./fishman.svg)
 
 Hi i'm Sejin
   
