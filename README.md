@@ -2,7 +2,7 @@
 
 ![fishman](./fishman.svg)
 
-Hi i'm Sejin
+
   
 ![goose](./goose.svg) ![pet](./bbibbi.svg)
 
