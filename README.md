@@ -3,9 +3,9 @@
 <a href="https://github.com/devxb/gitanimals">
     <img src="https://render.gitanimals.org/farms/zinzin1011" alt="gitanimals" />
   </a>
-
-![pet](./assets/bbibbi.svg)
   
+![pet](./bbibbi.svg)
+
 - 🔭 I’m currently working on ...
 - 🌱 I’m currently learning ...
 - 👯 I’m looking to collaborate on ...
