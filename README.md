@@ -4,7 +4,9 @@
 **zinzin1011/zinzin1011** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
 Here are some ideas to get you started:
-
+<a href="https://github.com/devxb/gitanimals">
+    <img src="https://render.gitanimals.org/farms/zinzin1011" alt="gitanimals" />
+  </a>
 - 🔭 I’m currently working on ...
 - 🌱 I’m currently learning ...
 - 👯 I’m looking to collaborate on ...
