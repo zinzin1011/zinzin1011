@@ -1,6 +1,6 @@
 ## Hi there 👋
 
-<div>          ![fishman](./fishman.svg)  <div/>
+          ![fishman](./fishman.svg)  
 
 
 
