@@ -1,8 +1,6 @@
 ## Hi there 👋
 
-<a href="https://github.com/devxb/gitanimals">
-    <img src="https://render.gitanimals.org/farms/zinzin1011" alt="gitanimals" />
-  </a>
+![fish](./fish.svg)
   
 ![goose](./goose.svg) ![pet](./bbibbi.svg)
 
