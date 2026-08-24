@@ -95,7 +95,32 @@
     animation-timing-function: ease-in-out;
     }
   </style>
+ @keyframes fishman-14-walk {
+  0% {
+  transform: translate(7px, 31px) scaleX(1);
+  }
+  49% {
+  transform: translate(60px, 31px) scaleX(1);
+  }
+  50% {
+  transform: translate(60px, 31px) scaleX(-1);
+  }
+  99% {
+  transform: translate(7px, 31px) scaleX(-1);
+  }
+  100% {
+  transform: translate(7px, 31px) scaleX(1);
+  }
+  }
 
+  #fishman-14 {
+  animation-name:fishman-14-walk;
+  animation-duration:4s;
+  animation-iteration-count:infinite;
+  animation-timing-function: ease-in-out;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  }
   <g id="fishman-14" transform="translate(0, 15)">
     <svg width="600" height="300" viewBox="0 0 200 100" fill="none" overflow="visible">
       <g id="fishman-14-shadow" transform="translate(0, 16.5)">
