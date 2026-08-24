@@ -55,15 +55,21 @@
   animation-iteration-count:infinite;
   animation-timing-function: ease-in-out;
   }
-    @keyframes bbibbi-14-walk {
+     @keyframes bbibbi-14-walk {
   0% {
-  transform: translate(7px, 31px);
+  transform: translate(7px, 31px) scaleX(1);
+  }
+  49% {
+  transform: translate(60px, 31px) scaleX(1);
   }
   50% {
-  transform: translate(60px, 31px);
+  transform: translate(60px, 31px) scaleX(-1);
+  }
+  99% {
+  transform: translate(7px, 31px) scaleX(-1);
   }
   100% {
-  transform: translate(7px, 31px);
+  transform: translate(7px, 31px) scaleX(1);
   }
   }
 
@@ -72,6 +78,8 @@
   animation-duration:4s;
   animation-iteration-count:infinite;
   animation-timing-function: ease-in-out;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
   }
 </style>
   <g id="bbibbi-14" transform="translate(7, 31)">
