@@ -1,6 +1,6 @@
 ## Hi there 👋
 
-![fish](./fish.svg)
+![fish](./fish.svg) # Hi i'm Sejin
   
 ![goose](./goose.svg) ![pet](./bbibbi.svg)
 
