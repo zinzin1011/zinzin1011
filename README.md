@@ -1,12 +1,9 @@
 ## Hi there 👋
 
 
-  ![fishman](./fishman.svg)  
-
-
-
-  
-![goose](./goose.svg) ![pet](./bbibbi.svg)
+ ![fishman](./file/fishman.svg)
+![goose](./file/goose.svg)
+![pet](./file/bbibbi.svg)
 
 - 🔭 I’m currently working on ...
 - 🌱 I’m currently learning ...
