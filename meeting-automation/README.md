@@ -1,0 +1,100 @@
+# 🎙️ 회의 녹음 → 노션 자동화 (meeting_bot)
+
+회의 녹음 파일 하나로 **STT 전사 → Claude 분석 → 노션 회의록 + 할 일 배정 + 핵심 일정 + 고객 히스토리**까지 한 번에 끝냅니다.
+쌓인 회의록은 결정사항 타임라인·주간 리포트·리서치·위키 반영·캐치업·콘텐츠로 다시 굴러갑니다.
+
+```
+🎙️ 녹음(m4a/mp3)                         ┌─▶ 🗒️ 회의록 DB  (요약·결정사항·영문요약·전사본)
+   │ STT (faster-whisper / OpenAI)         ├─▶ ✅ 할 일 DB   (담당자 @멘션 · 마감일 · 우선순위)
+   ▼                                       ├─▶ 📅 핵심 일정 DB (마감·런칭·후속미팅 → 노션 캘린더) + .ics
+📄 전사본 ── Claude 구조화 분석 ───────────┼─▶ 🤝 고객 CRM DB (고객콜이면 relation 으로 미팅 누적)
+                                           └─▶ (옵션) 🔎 리서치 · 📣 콘텐츠 · 📌 위키 반영
+매주 금요일 GitHub Actions ─────────────────▶ 📊 리포트 DB (주간 리포트)
+```
+
+## 10가지 조합 ↔ 명령어
+
+| # | 조합 | 명령 | 결과 |
+|---|---|---|---|
+| 1 | 회의록 → 할 일 DB 자동 연결 | `process` | 액션아이템마다 담당자(노션 멤버 자동 매칭)·마감일 붙여 할 일 DB 등록, 회의록과 relation |
+| 2 | 여러 회의록 한 번에 요약 | `decisions --start 2026-10-01` | 기간 내 결정사항 타임라인 (번복된 결정 🔁 표시) |
+| 3 | 회의록 → 고객 페이지 축적 | `process` (고객콜 자동 감지) | CRM 고객 행에 미팅 relation → 고객 페이지에 미팅 히스토리 |
+| 4 | 회의록 → 리서치 심화 | `research <회의록ID>` / `process --research` | 웹검색 기반, 출처 달린 시장성 리포트 (회의록 하위 페이지) |
+| 5 | 주간 리포트 자동 생성 | `weekly` + GitHub Actions(금 17시) | 결정·진행·리스크·다음 주 마감 정리 |
+| 6 | 회의 결정 → 위키 반영 | `wiki <회의록ID> [--apply]` | 관련 위키 검색 → 충돌 부분 수정안 (기본 미리보기, `--apply` 시 위키에 추가) |
+| 7 | 후속 미팅 자동 세팅 | `process --ics followup.ics` | "다음 주 팔로업" → 핵심 일정 DB(노션 캘린더) + .ics(구글/아웃룩 가져오기) |
+| 8 | 한 회의, 세 개의 결과물 | `process` | 한국어 요약 + 🌐 English summary 토글 + 할 일 DB 등록 동시 처리 |
+| 9 | 놓친 회의 따라잡기 | `catchup --me "김OO(마케팅)" --keyword 마케팅` | 나에게 중요한 것만 3줄 + 내 할 일 |
+| 10 | 콘텐츠 파이프라인 | `content <회의록ID> --brand "슈크림마을"` / `process --content` | 카드뉴스 2세트·캡션·블로그 초안·숏폼 훅 |
+
+`process --auto` 를 주면 회의 유형을 보고 알아서 조합합니다:
+브레인스토밍 → 리서치, 강의·세미나/인터뷰 → 콘텐츠, 정책 변경 → 위키 수정안.
+
+## 설치 (10분)
+
+```bash
+cd meeting-automation
+pip install -r requirements.txt     # ffmpeg 도 필요: brew install ffmpeg / apt install ffmpeg
+cp .env.example .env
+```
+
+1. **노션 통합 만들기**: https://www.notion.so/my-integrations → 새 통합 → 토큰을 `.env` 의 `NOTION_TOKEN` 에.
+   (기능: 콘텐츠 읽기/수정/입력, 사용자 정보 읽기 체크)
+2. **부모 페이지 연결**: 노션에 빈 페이지(예: "회의 자동화") 만들고 `···` → 연결 → 방금 만든 통합 추가.
+   위키 반영(#6)을 쓰려면 위키 페이지에도 통합을 연결하세요.
+3. **DB 자동 생성**:
+   ```bash
+   python -m meeting_bot setup <부모페이지ID>
+   ```
+   출력된 `NOTION_*_DB=` 값을 `.env` 에 붙여넣기. (페이지 ID = URL 끝 32자리)
+4. `ANTHROPIC_API_KEY` 입력 (https://console.anthropic.com).
+
+## 사용법
+
+```bash
+# 회의 녹음 → 노션 전체 반영 (+ 캘린더 파일)
+python -m meeting_bot process --audio 2026-10-26_주간회의.m4a --date 2026-10-26 --ics followup.ics
+
+# 이미 전사본이 있을 때 (클로바노트·줌 자막 등)
+python -m meeting_bot process --transcript meeting.txt --title "A사 2차 미팅"
+
+# 노션 AI 회의노트로 녹음했다면, 그 페이지를 그대로 입력으로
+python -m meeting_bot process --notion-page <페이지ID> --auto
+
+# 이번 분기 결정사항만 모아서
+python -m meeting_bot decisions                # 기본: 분기 시작 ~ 오늘
+python -m meeting_bot decisions --keyword 가격정책
+
+# 어제 마케팅 회의, 나한테 중요한 것만
+python -m meeting_bot catchup --me "박지민 (디자인)" --keyword 마케팅
+
+# 주간 리포트
+python -m meeting_bot weekly
+```
+
+## 주간 리포트 자동화 (#5)
+
+`.github/workflows/weekly-meeting-report.yml` 가 매주 금요일 17:00(KST) 실행됩니다.
+GitHub 저장소 → Settings → Secrets and variables → Actions 에 `ANTHROPIC_API_KEY`, `NOTION_TOKEN`,
+`NOTION_MEETINGS_DB`, `NOTION_TASKS_DB`, `NOTION_REPORTS_DB` 를 등록하세요.
+
+## 녹음 → 자동 실행까지 (선택)
+
+- **폴더 감시**: 녹음 앱이 저장하는 폴더를 감시해 새 파일마다 `process --audio` 실행
+  (macOS: 단축어/폴더 액션, Windows: 작업 스케줄러, Linux: `inotifywait`).
+  ```bash
+  inotifywait -m -e close_write --format '%w%f' ~/Recordings | while read f; do
+    python -m meeting_bot process --audio "$f" --auto --ics "${f%.*}.ics"; done
+  ```
+- **노션 AI 회의노트** 사용 시: 노션에서 녹음·전사 → 끝나면 `process --notion-page` 로 할 일/일정/CRM 분배.
+
+## 설계 메모
+
+- **STT**: 기본은 로컬 `faster-whisper large-v3` (무료, 한국어 품질 좋음, GPU 있으면 실시간보다 빠름).
+  노트북 CPU라면 `WHISPER_MODEL=small`, 빠르게 하려면 `STT_BACKEND=openai` (25MB 제한).
+- **분석**: Claude 구조화 출력(JSON 스키마)으로 요약·결정·액션아이템·일정·정책변경·아이디어를 한 번에 뽑습니다.
+  "다음 주 금요일" 같은 상대 날짜는 회의 날짜 기준으로 변환됩니다.
+- **담당자 매칭**: 전사본의 이름을 노션 워크스페이스 멤버 이름과 비교해 `담당자`(people)에 지정,
+  매칭이 안 되면 `담당자명`(텍스트)에만 기록합니다. 노션 프로필 이름을 회의에서 부르는 이름과 맞추면 정확도가 올라갑니다.
+- **위키는 덮어쓰지 않습니다**: 기존 문서를 지우지 않고 "📌 회의 결정 반영" 콜아웃 + 수정안을 하단에 추가합니다.
+- 전사본에 없는 내용은 만들지 않도록 프롬프트에 명시했지만, STT 오인식이 있을 수 있으니 처음 몇 번은 결과를 확인하세요.

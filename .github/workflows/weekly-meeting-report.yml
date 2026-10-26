@@ -1,0 +1,26 @@
+name: 주간 회의 리포트
+
+on:
+  schedule:
+    - cron: "0 8 * * 5"   # 매주 금요일 17:00 KST
+  workflow_dispatch:
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: meeting-automation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install anthropic httpx python-dotenv
+      - run: python -m meeting_bot weekly
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_MEETINGS_DB: ${{ secrets.NOTION_MEETINGS_DB }}
+          NOTION_TASKS_DB: ${{ secrets.NOTION_TASKS_DB }}
+          NOTION_REPORTS_DB: ${{ secrets.NOTION_REPORTS_DB }}
