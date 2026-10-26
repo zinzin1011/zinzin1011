@@ -48,6 +48,43 @@ def cmd_process(args):
             print(features.wiki_sync(meeting_id, apply=args.apply_wiki))
 
 
+def _load_transcript(args) -> str:
+    if args.audio:
+        from .stt import transcribe
+        print(f"🎙️ STT 변환 중: {args.audio}")
+        text = transcribe(args.audio)
+        Path(args.audio).with_suffix(".txt").write_text(text, encoding="utf-8")
+        return text
+    if args.transcript:
+        return Path(args.transcript).read_text(encoding="utf-8")
+    return Notion().page_text(args.notion_page, depth=3)
+
+
+def cmd_project(args):
+    import json
+    from .project_mode import process_project_meeting
+    result = process_project_meeting(_load_transcript(args), args.date, args.time, args.author, args.dry_run)
+    if args.dry_run:
+        print(json.dumps(result["analysis"], ensure_ascii=False, indent=2))
+
+
+def cmd_watch(args):
+    from .stt import transcribe
+    from .watch import watch
+
+    def handle(path, day):
+        text = transcribe(path)
+        path.with_suffix(".txt").write_text(text, encoding="utf-8")
+        if args.mode == "project":
+            from .project_mode import process_project_meeting
+            process_project_meeting(text, day, author=args.author)
+        else:
+            from .pipeline import process_transcript
+            process_transcript(text, day)
+
+    watch(args.folder, handle, args.interval)
+
+
 def cmd_decisions(args):
     today = date.today()
     print(features.decisions_timeline(args.start or _quarter_start(today),
@@ -98,6 +135,22 @@ def main():
     s.add_argument("--wiki", action="store_true", help="정책 변경을 위키에 반영할 제안 출력")
     s.add_argument("--apply-wiki", action="store_true", help="위키 페이지에 실제로 추가")
     s.set_defaults(func=cmd_process)
+
+    s = sub.add_parser("project", help="팀 프로젝트 노션(회의록·의사결정 기록·프로젝트 일정)에 반영")
+    src = s.add_mutually_exclusive_group(required=True)
+    src.add_argument("--audio"); src.add_argument("--transcript"); src.add_argument("--notion-page")
+    s.add_argument("--date", help="회의 날짜 YYYY-MM-DD (기본: 오늘)")
+    s.add_argument("--time", help="회의 시작 시각 HH:MM")
+    s.add_argument("--author", help="작성자 (노션 '작성자' 선택지 중 하나)")
+    s.add_argument("--dry-run", action="store_true", help="노션에 쓰지 않고 분석 결과만 출력")
+    s.set_defaults(func=cmd_project)
+
+    s = sub.add_parser("watch", help="녹음 폴더 감시 → 새 파일 자동 처리")
+    s.add_argument("folder", help="녹음 파일이 쌓이는 폴더 (구글 드라이브 동기화 폴더 추천)")
+    s.add_argument("--mode", choices=["project", "default"], default="project")
+    s.add_argument("--author", help="작성자 (project 모드)")
+    s.add_argument("--interval", type=int, default=60, help="확인 주기(초)")
+    s.set_defaults(func=cmd_watch)
 
     s = sub.add_parser("decisions", help="기간 내 결정사항 타임라인 (기본: 이번 분기)")
     s.add_argument("--start"); s.add_argument("--end"); s.add_argument("--keyword")

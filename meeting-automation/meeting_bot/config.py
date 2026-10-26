@@ -20,6 +20,7 @@ class Config:
     schedule_db: str = _env("NOTION_SCHEDULE_DB")
     crm_db: str = _env("NOTION_CRM_DB")
     reports_db: str = _env("NOTION_REPORTS_DB")
+    decisions_db: str = _env("NOTION_DECISIONS_DB")
 
     claude_model: str = _env("CLAUDE_MODEL", "claude-opus-5-5")
     timezone: str = _env("TIMEZONE", "Asia/Seoul")
@@ -38,6 +39,7 @@ class Config:
                 "schedule_db": "NOTION_SCHEDULE_DB",
                 "crm_db": "NOTION_CRM_DB",
                 "reports_db": "NOTION_REPORTS_DB",
+                "decisions_db": "NOTION_DECISIONS_DB",
             }
             raise SystemExit(
                 "다음 환경변수가 필요합니다: "
