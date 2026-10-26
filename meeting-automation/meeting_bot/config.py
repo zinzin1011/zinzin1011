@@ -48,3 +48,17 @@ class Config:
 
 
 CONFIG = Config()
+
+GLOSSARY_FILE = Path(_env("GLOSSARY_FILE") or Path(__file__).resolve().parent.parent / "glossary.txt")
+
+
+def load_glossary() -> list[str]:
+    """glossary.txt: 한 줄에 용어 하나 (# 주석 가능). 받아쓰기와 분석에서 오인식 교정에 사용."""
+    if not GLOSSARY_FILE.exists():
+        return []
+    terms = []
+    for line in GLOSSARY_FILE.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            terms.append(line)
+    return list(dict.fromkeys(terms))

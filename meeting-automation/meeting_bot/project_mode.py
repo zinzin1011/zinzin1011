@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from . import notion as nb
-from .config import CONFIG
+from .config import CONFIG, load_glossary
 from .notion import Notion
 
 # 회의록 DB 속성
@@ -167,9 +167,19 @@ def _load_dbs(n: Notion) -> tuple[dict, dict | None, dict | None]:
     return m_db, d_db, s_db
 
 
+def _rules() -> str:
+    terms = load_glossary()
+    if not terms:
+        return SYSTEM
+    return SYSTEM + (
+        "\n용어집: 녹취에서 아래 용어가 비슷한 발음으로 잘못 받아써졌으면 이 표기로 고쳐서 쓰세요.\n- "
+        + "\n- ".join(terms) + "\n"
+    )
+
+
 def analysis_spec() -> dict:
-    """Claude Code 가 직접 분석할 때 쓰는 규칙 + JSON 스키마 (노션 선택지 반영)."""
-    return {"rules": SYSTEM, "schema": _schema(*_load_dbs(Notion()))}
+    """Claude Code 가 직접 분석할 때 쓰는 규칙 + JSON 스키마 (노션 선택지·용어집 반영)."""
+    return {"rules": _rules(), "schema": _schema(*_load_dbs(Notion()))}
 
 
 def process_project_meeting(transcript: str, meeting_date: str | None = None, meeting_time: str | None = None,
@@ -184,7 +194,7 @@ def process_project_meeting(transcript: str, meeting_date: str | None = None, me
     if a is None:
         from .llm import ask_json
         print("🧠 Claude 로 회의 분석 중...")
-        a = ask_json(SYSTEM, f"회의 날짜: {meeting_date}\n\n<transcript>\n{transcript}\n</transcript>",
+        a = ask_json(_rules(), f"회의 날짜: {meeting_date}\n\n<transcript>\n{transcript}\n</transcript>",
                      _schema(m_db, d_db, s_db), effort="high")
     if dry_run:
         return {"analysis": a}

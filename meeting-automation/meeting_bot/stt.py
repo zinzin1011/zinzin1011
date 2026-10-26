@@ -15,11 +15,24 @@ from pathlib import Path
 
 import httpx
 
-from .config import CONFIG
+from .config import CONFIG, load_glossary
 
 OPENAI_LIMIT_BYTES = 25 * 1024 * 1024
 MLX_MODEL = os.environ.get("MLX_WHISPER_MODEL", "mlx-community/whisper-large-v3-turbo")
 DIARIZE_MODEL = os.environ.get("DIARIZE_MODEL", "pyannote/speaker-diarization-3.1")
+
+
+def _initial_prompt() -> str | None:
+    """Whisper 에 '이런 단어가 나온다' 고 미리 알려 주는 문장 (앞부분 약 200토큰만 반영됨)."""
+    terms = load_glossary()
+    if not terms:
+        return None
+    prompt = "회의 녹음입니다. 자주 나오는 용어: "
+    for t in terms:
+        if len(prompt) + len(t) > 400:
+            break
+        prompt += t + ", "
+    return prompt.rstrip(", ") + "."
 
 
 def _fmt_ts(seconds: float) -> str:
@@ -34,7 +47,8 @@ def _segments_mlx(path: Path) -> list[tuple[float, float, str]]:
         import mlx_whisper
     except ImportError as e:
         raise SystemExit("mlx-whisper 가 없습니다: pip install mlx-whisper (Apple Silicon Mac 전용)") from e
-    result = mlx_whisper.transcribe(str(path), path_or_hf_repo=MLX_MODEL, language="ko")
+    result = mlx_whisper.transcribe(str(path), path_or_hf_repo=MLX_MODEL, language="ko",
+                                    initial_prompt=_initial_prompt())
     return [(s["start"], s["end"], s["text"].strip()) for s in result["segments"]]
 
 
@@ -44,7 +58,8 @@ def _segments_local(path: Path) -> list[tuple[float, float, str]]:
     except ImportError as e:
         raise SystemExit("faster-whisper 가 없습니다: pip install faster-whisper") from e
     model = WhisperModel(CONFIG.whisper_model, device="auto", compute_type="auto")
-    segments, _info = model.transcribe(str(path), language="ko", vad_filter=True, beam_size=5)
+    segments, _info = model.transcribe(str(path), language="ko", vad_filter=True, beam_size=5,
+                                       initial_prompt=_initial_prompt())
     return [(s.start, s.end, s.text.strip()) for s in segments]
 
 
@@ -60,7 +75,8 @@ def _transcribe_openai(path: Path) -> str:
         resp = httpx.post(
             "https://api.openai.com/v1/audio/transcriptions",
             headers={"Authorization": f"Bearer {CONFIG.openai_api_key}"},
-            data={"model": "whisper-1", "language": "ko", "response_format": "text"},
+            data={"model": "whisper-1", "language": "ko", "response_format": "text",
+                  **({"prompt": p} if (p := _initial_prompt()) else {})},
             files={"file": (path.name, f)},
             timeout=600,
         )

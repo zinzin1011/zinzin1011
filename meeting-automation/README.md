@@ -47,6 +47,8 @@ Claude Code 에 그냥 말하면 됩니다.
 수동으로도 쓸 수 있습니다: `python -m meeting_bot record start|stop|status|devices`, `python -m meeting_bot transcribe 파일.m4a`
 
 ### 팁
+- **용어집**: `cp glossary.example.txt glossary.txt` 후 팀 용어(영어 약어, 제품명, 팀원 이름)를 한 줄에 하나씩.
+  받아쓰기(Whisper)에 미리 알려 주고, 분석할 때도 잘못 받아써진 용어를 이 표기로 고칩니다. (`glossary.txt` 는 커밋되지 않음)
 - 시작할 때 한 명씩 "○○○입니다" 한마디 → 화자 이름 매칭이 정확해집니다.
 - 줌·구글밋 상대방 소리까지 녹음하려면 BlackHole(무료 가상 오디오) + 'Multi-Output / Aggregate Device' 를 만들고
   `record devices` 에서 그 장치 번호를 `RECORD_DEVICE=:번호` 로.
