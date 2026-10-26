@@ -9,7 +9,6 @@ from zoneinfo import ZoneInfo
 
 from . import notion as nb
 from .config import CONFIG
-from .llm import ask_json
 from .notion import Notion
 
 # 회의록 DB 속성
@@ -160,19 +159,33 @@ def _schedule_exists(n: Notion, s_db_id: str, day: str, title: str) -> bool:
     return False
 
 
-def process_project_meeting(transcript: str, meeting_date: str | None = None, meeting_time: str | None = None,
-                            author: str | None = None, dry_run: bool = False) -> dict:
+def _load_dbs(n: Notion) -> tuple[dict, dict | None, dict | None]:
     CONFIG.require("notion_token", "meetings_db")
-    n = Notion()
-    meeting_date = meeting_date or datetime.now(ZoneInfo(CONFIG.timezone)).date().isoformat()
-
     m_db = n._req("GET", f"/databases/{CONFIG.meetings_db}")
     d_db = n._req("GET", f"/databases/{CONFIG.decisions_db}") if CONFIG.decisions_db else None
     s_db = n._req("GET", f"/databases/{CONFIG.schedule_db}") if CONFIG.schedule_db else None
+    return m_db, d_db, s_db
 
-    print("🧠 Claude 로 회의 분석 중...")
-    a = ask_json(SYSTEM, f"회의 날짜: {meeting_date}\n\n<transcript>\n{transcript}\n</transcript>",
-                 _schema(m_db, d_db, s_db), effort="high")
+
+def analysis_spec() -> dict:
+    """Claude Code 가 직접 분석할 때 쓰는 규칙 + JSON 스키마 (노션 선택지 반영)."""
+    return {"rules": SYSTEM, "schema": _schema(*_load_dbs(Notion()))}
+
+
+def process_project_meeting(transcript: str, meeting_date: str | None = None, meeting_time: str | None = None,
+                            author: str | None = None, dry_run: bool = False,
+                            analysis: dict | None = None) -> dict:
+    """analysis 를 주면 (Claude Code 가 이미 분석한 경우) Claude API 를 부르지 않습니다."""
+    n = Notion()
+    meeting_date = meeting_date or datetime.now(ZoneInfo(CONFIG.timezone)).date().isoformat()
+    m_db, d_db, s_db = _load_dbs(n)
+
+    a = analysis
+    if a is None:
+        from .llm import ask_json
+        print("🧠 Claude 로 회의 분석 중...")
+        a = ask_json(SYSTEM, f"회의 날짜: {meeting_date}\n\n<transcript>\n{transcript}\n</transcript>",
+                     _schema(m_db, d_db, s_db), effort="high")
     if dry_run:
         return {"analysis": a}
 

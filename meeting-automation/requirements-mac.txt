@@ -1,0 +1,5 @@
+# 무료 Mac 구성 (Claude Code 가 분석, Claude API 불필요)
+httpx>=0.27
+python-dotenv>=1.0
+mlx-whisper>=0.4        # Apple Silicon GPU 받아쓰기
+pyannote.audio>=3.1     # 화자 구분

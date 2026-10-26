@@ -12,6 +12,46 @@
 매주 금요일 GitHub Actions ─────────────────▶ 📊 리포트 DB (주간 리포트)
 ```
 
+## 🍎 Mac 무료 구성: Claude Code 에 "회의 시작" / "회의 끝"
+
+Claude API 키 없이, 이미 쓰는 Claude Code 가 분석까지 합니다.
+
+```
+"회의 시작"  → Mac 마이크 녹음 (드라이브 동기화 폴더에 저장 = 자동 업로드)
+"회의 끝"    → 녹음 종료 → mlx-whisper 받아쓰기 + pyannote 화자 구분 (내 Mac, 무료)
+             → Claude Code 가 화자 이름 매칭·분석 (모르면 물어봄) → 미리보기
+             → 노션 회의록 · 의사결정 기록 · 프로젝트 일정 반영 → 링크 안내
+```
+
+### 준비 (처음 한 번, 20분)
+1. 설치 (Apple Silicon Mac)
+   ```bash
+   brew install ffmpeg python
+   cd meeting-automation && pip install -r requirements-mac.txt
+   cp .env.example .env
+   ```
+2. **구글 드라이브 데스크톱 앱** 설치 → 팀 드라이브 `00_관리` 안에 `녹음` 폴더 → 그 경로를 `.env` 의 `RECORD_DIR` 에.
+   (Finder 에서 폴더를 터미널로 끌어다 놓으면 경로가 나옵니다)
+3. **화자 구분 토큰 (무료)**: huggingface.co 가입 → `pyannote/speaker-diarization-3.1` 과
+   `pyannote/segmentation-3.0` 페이지에서 이용 약관 동의 → Settings → Access Tokens 에서 Read 토큰 발급 → `.env` 의 `HF_TOKEN`.
+4. **노션**: 통합 토큰을 `NOTION_TOKEN` 에, 회의록·의사결정 기록·프로젝트 일정 DB ID 를 넣고, 프로젝트 페이지에 통합 연결.
+5. `MEETING_AUTHOR` 에 회의록 작성자 이름.
+6. 이 폴더에서 Claude Code 실행: `cd meeting-automation && claude`
+   - 처음 녹음할 때 macOS 가 마이크 권한을 물으면 허용 (터미널 / Claude 앱).
+
+### 사용
+Claude Code 에 그냥 말하면 됩니다.
+- `회의 시작` (또는 `정기회의 시작`) → 🔴 녹음
+- `회의 끝` → 받아쓰기 · 화자 구분 · 분석 · 미리보기 → 확인하면 노션 반영
+
+수동으로도 쓸 수 있습니다: `python -m meeting_bot record start|stop|status|devices`, `python -m meeting_bot transcribe 파일.m4a`
+
+### 팁
+- 시작할 때 한 명씩 "○○○입니다" 한마디 → 화자 이름 매칭이 정확해집니다.
+- 줌·구글밋 상대방 소리까지 녹음하려면 BlackHole(무료 가상 오디오) + 'Multi-Output / Aggregate Device' 를 만들고
+  `record devices` 에서 그 장치 번호를 `RECORD_DEVICE=:번호` 로.
+- 1시간 회의 받아쓰기는 M1/M2 기준 수 분~10분 정도. 화자 구분이 필요 없으면 `HF_TOKEN` 을 비워 두면 더 빠릅니다.
+
 ## 🧑‍🤝‍🧑 이미 있는 팀 노션에 쓰기 (project 모드)
 
 팀 노션에 **회의록 · 의사결정 기록 · 프로젝트 일정** DB가 이미 있으면 `setup` 없이 그 DB에 바로 씁니다.

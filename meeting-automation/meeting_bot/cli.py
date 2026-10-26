@@ -1,9 +1,9 @@
 """명령줄 진입점: python -m meeting_bot <명령> ..."""
 import argparse
+import os
 from datetime import date, timedelta
 from pathlib import Path
 
-from . import features
 from .notion import Notion
 
 
@@ -20,6 +20,7 @@ def cmd_setup(args):
 
 
 def cmd_process(args):
+    from . import features
     from .pipeline import process_transcript
 
     if args.audio:
@@ -63,9 +64,40 @@ def _load_transcript(args) -> str:
 def cmd_project(args):
     import json
     from .project_mode import process_project_meeting
-    result = process_project_meeting(_load_transcript(args), args.date, args.time, args.author, args.dry_run)
+    analysis = json.loads(Path(args.analysis).read_text(encoding="utf-8")) if args.analysis else None
+    result = process_project_meeting(_load_transcript(args), args.date, args.time, args.author, args.dry_run,
+                                     analysis)
     if args.dry_run:
         print(json.dumps(result["analysis"], ensure_ascii=False, indent=2))
+
+
+def cmd_record(args):
+    from . import recorder
+    if args.action == "start":
+        st = recorder.start(args.name)
+        print(f"🔴 녹음 시작: {st['file']}")
+    elif args.action == "stop":
+        st = recorder.stop()
+        print(f"⏹️ 녹음 종료 ({st['minutes']}분): {st['file']}")
+    elif args.action == "devices":
+        print(recorder.list_devices())
+    else:
+        st = recorder.status()
+        print(f"🔴 녹음 중: {st['file']} (시작 {st['started']})" if st else "녹음 중이 아닙니다.")
+
+
+def cmd_transcribe(args):
+    from .stt import transcribe
+    text = transcribe(args.audio, diarize=not args.no_diarize)
+    out = Path(args.output) if args.output else Path(args.audio).with_suffix(".txt")
+    out.write_text(text, encoding="utf-8")
+    print(f"📝 녹취 저장: {out}")
+
+
+def cmd_schema(args):
+    import json
+    from .project_mode import analysis_spec
+    print(json.dumps(analysis_spec(), ensure_ascii=False, indent=1))
 
 
 def cmd_watch(args):
@@ -86,29 +118,35 @@ def cmd_watch(args):
 
 
 def cmd_decisions(args):
+    from . import features
     today = date.today()
     print(features.decisions_timeline(args.start or _quarter_start(today),
                                       args.end or today.isoformat(), args.keyword, not args.no_save))
 
 
 def cmd_weekly(args):
+    from . import features
     print(features.weekly_report(args.end, not args.no_save))
 
 
 def cmd_catchup(args):
+    from . import features
     day = args.date or (date.today() - timedelta(days=1)).isoformat()
     print(features.catchup(args.start or day, args.end or day, args.me, args.keyword, args.save))
 
 
 def cmd_research(args):
+    from . import features
     print(features.research(args.page_id, args.focus))
 
 
 def cmd_content(args):
+    from . import features
     print(features.content(args.page_id, args.brand))
 
 
 def cmd_wiki(args):
+    from . import features
     print(features.wiki_sync(args.page_id, apply=args.apply))
 
 
@@ -141,14 +179,30 @@ def main():
     src.add_argument("--audio"); src.add_argument("--transcript"); src.add_argument("--notion-page")
     s.add_argument("--date", help="회의 날짜 YYYY-MM-DD (기본: 오늘)")
     s.add_argument("--time", help="회의 시작 시각 HH:MM")
-    s.add_argument("--author", help="작성자 (노션 '작성자' 선택지 중 하나)")
+    s.add_argument("--author", default=os.environ.get("MEETING_AUTHOR"),
+                   help="작성자 (노션 '작성자' 선택지 중 하나, 기본: MEETING_AUTHOR)")
     s.add_argument("--dry-run", action="store_true", help="노션에 쓰지 않고 분석 결과만 출력")
+    s.add_argument("--analysis", help="Claude Code 가 만든 분석 JSON 파일 (주면 Claude API 를 쓰지 않음)")
     s.set_defaults(func=cmd_project)
+
+    s = sub.add_parser("record", help="Mac 마이크 녹음 (start / stop / status / devices)")
+    s.add_argument("action", choices=["start", "stop", "status", "devices"])
+    s.add_argument("--name", default="회의", help="파일명에 붙을 이름 (예: 정기회의)")
+    s.set_defaults(func=cmd_record)
+
+    s = sub.add_parser("transcribe", help="녹음 → 화자 구분 녹취 텍스트 (무료, 내 컴퓨터에서 처리)")
+    s.add_argument("audio")
+    s.add_argument("-o", "--output")
+    s.add_argument("--no-diarize", action="store_true", help="화자 구분 생략 (더 빠름)")
+    s.set_defaults(func=cmd_transcribe)
+
+    s = sub.add_parser("schema", help="Claude Code 용 분석 규칙·JSON 스키마 출력 (노션 선택지 반영)")
+    s.set_defaults(func=cmd_schema)
 
     s = sub.add_parser("watch", help="녹음 폴더 감시 → 새 파일 자동 처리")
     s.add_argument("folder", help="녹음 파일이 쌓이는 폴더 (구글 드라이브 동기화 폴더 추천)")
     s.add_argument("--mode", choices=["project", "default"], default="project")
-    s.add_argument("--author", help="작성자 (project 모드)")
+    s.add_argument("--author", default=os.environ.get("MEETING_AUTHOR"), help="작성자 (project 모드)")
     s.add_argument("--interval", type=int, default=60, help="확인 주기(초)")
     s.set_defaults(func=cmd_watch)
 
