@@ -9,21 +9,21 @@ Claude API 를 쓰지 않는다. 분석은 지금 이 대화에서 직접 하고
 
 ## 1. 녹음 종료
 ```bash
-python -m meeting_bot record stop
+./mb record stop
 ```
 출력의 파일 경로를 `AUDIO` 로 기억한다. 파일은 RECORD_DIR(구글 드라이브 동기화 폴더)에 있어 자동 업로드된다.
 (사용자가 기존 녹음 파일 경로를 줬다면 1단계를 건너뛰고 그 파일을 `AUDIO` 로 쓴다.)
 
 ## 2. 받아쓰기 + 화자 구분 (내 Mac 에서, 수 분 걸림)
 ```bash
-python -m meeting_bot transcribe "$AUDIO"
+./mb transcribe "$AUDIO"
 ```
 - 오래 걸리니 타임아웃을 넉넉히(최대치) 잡는다. 사용자에게 "받아쓰는 중(1시간 회의 기준 몇 분)"이라고 한 줄 알린다.
 - 결과는 `AUDIO` 와 같은 이름의 `.txt`. 각 줄은 `[시:분:초] [화자N] 말`.
 
 ## 3. 분석 규칙 가져오기
 ```bash
-python -m meeting_bot schema
+./mb schema
 ```
 `rules` 와 `schema` 를 따른다. 사람 이름·유형·분야는 schema 의 enum 값만 쓸 수 있다.
 
@@ -41,7 +41,7 @@ python -m meeting_bot schema
 사용자에게 짧게 보여 준다: 회의명, 핵심 결정, Action Items(담당/기한), 추가될 일정.
 사용자가 확인하면(또는 처음부터 "바로 올려"라고 했으면) 실행:
 ```bash
-python -m meeting_bot project --transcript "<녹취.txt>" --analysis "<.analysis.json>" --date YYYY-MM-DD --time HH:MM
+./mb project --transcript "<녹취.txt>" --analysis "<.analysis.json>" --date YYYY-MM-DD --time HH:MM
 ```
 `--author` 는 `.env` 의 `MEETING_AUTHOR` 가 기본값이다.
 

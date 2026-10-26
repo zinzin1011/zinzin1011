@@ -24,12 +24,8 @@ Claude API 키 없이, 이미 쓰는 Claude Code 가 분석까지 합니다.
 ```
 
 ### 준비 (처음 한 번, 20분)
-1. 설치 (Apple Silicon Mac)
-   ```bash
-   brew install ffmpeg python
-   cd meeting-automation && pip install -r requirements-mac.txt
-   cp .env.example .env
-   ```
+1. 설치 (Apple Silicon Mac): `cd meeting-automation && ./setup_mac.sh`
+   (Homebrew·ffmpeg·Python·패키지 설치, `.env`·`glossary.txt` 생성까지 한 번에. 이후 명령은 `./mb ...`)
 2. **구글 드라이브 데스크톱 앱** 설치 → 팀 드라이브 `00_관리` 안에 `녹음` 폴더 → 그 경로를 `.env` 의 `RECORD_DIR` 에.
    (Finder 에서 폴더를 터미널로 끌어다 놓으면 경로가 나옵니다)
 3. **화자 구분 토큰 (무료)**: huggingface.co 가입 → `pyannote/speaker-diarization-3.1` 과
@@ -44,7 +40,7 @@ Claude Code 에 그냥 말하면 됩니다.
 - `회의 시작` (또는 `정기회의 시작`) → 🔴 녹음
 - `회의 끝` → 받아쓰기 · 화자 구분 · 분석 · 미리보기 → 확인하면 노션 반영
 
-수동으로도 쓸 수 있습니다: `python -m meeting_bot record start|stop|status|devices`, `python -m meeting_bot transcribe 파일.m4a`
+수동으로도 쓸 수 있습니다: `./mb record start|stop|status|devices`, `./mb transcribe 파일.m4a`
 
 ### 팁
 - **용어집**: `cp glossary.example.txt glossary.txt` 후 팀 용어(영어 약어, 제품명, 팀원 이름)를 한 줄에 하나씩.
