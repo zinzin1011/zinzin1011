@@ -16,7 +16,7 @@ STATE = Path.home() / ".meeting_bot" / "recording.json"
 
 
 def _record_dir() -> Path:
-    d = Path(os.environ.get("RECORD_DIR", "~/Recordings/meetings")).expanduser()
+    d = Path(os.environ.get("RECORD_DIR", "").strip() or "~/Recordings/meetings").expanduser()
     d.mkdir(parents=True, exist_ok=True)
     return d
 
